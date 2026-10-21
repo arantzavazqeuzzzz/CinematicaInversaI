@@ -1,0 +1,177 @@
+clc;
+clear;
+close all;
+
+% CINEMATICA INVERSA DE UN ROBOT PLANAR DE 2 ESLABONES
+
+% Paso 1. Leer los datos del usuario
+XF = input('Ingresa la coordenada X final: ');
+YF = input('Ingresa la coordenada Y final: ');
+
+l1 = input('Ingresa la longitud del primer eslabon l1: ');
+l2 = input('Ingresa la longitud del segundo eslabon l2: ');
+
+% Verificar que las longitudes sean positivas
+if l1 <= 0 || l2 <= 0
+    error('Las longitudes de los eslabones deben ser positivas.');
+end
+
+% Calcular la distancia desde el origen hasta el punto final
+r = sqrt(XF^2 + YF^2);
+
+% Verificar si el punto esta al alcance del robot
+if r > l1 + l2 || r < abs(l1 - l2)
+    error('La posicion deseada esta fuera del alcance del robot.');
+end
+
+% Paso 2. Seleccionar la configuracion del codo
+fprintf('\nSelecciona la configuracion del robot:\n');
+fprintf('1. Codo arriba\n');
+fprintf('2. Codo abajo\n');
+
+opcion = input('Ingresa 1 o 2: ');
+
+if opcion ~= 1 && opcion ~= 2
+    error('Opcion no valida. Selecciona 1 o 2.');
+end
+
+% Paso 3. Calcular el angulo auxiliar sigma
+sigma = atan2d(YF, XF);
+
+% Paso 4. Calcular el angulo beta mediante la ley de cosenos
+valor_beta = (l2^2 - l1^2 - r^2) / (-2*l1*r);
+valor_beta = max(-1, min(1, valor_beta));
+beta = acosd(valor_beta);
+
+% Paso 5. Calcular theta1 segun la configuracion seleccionada
+if opcion == 1
+    theta1 = sigma + beta;
+else
+    theta1 = sigma - beta;
+end
+
+% Paso 6. Calcular el angulo interno gamma
+valor_gamma = (r^2 - l1^2 - l2^2) / (-2*l1*l2);
+valor_gamma = max(-1, min(1, valor_gamma));
+gamma = acosd(valor_gamma);
+
+% Paso 7. Calcular el valor base de theta2
+theta2_val = 180 - gamma;
+
+% Paso 8. Definir el signo de theta2 segun la configuracion
+if opcion == 1
+    theta2 = -theta2_val;
+    configuracion = 'Codo arriba';
+else
+    theta2 = theta2_val;
+    configuracion = 'Codo abajo';
+end
+
+% Calcular la posicion del codo
+x1 = l1*cosd(theta1);
+y1 = l1*sind(theta1);
+
+% Mostrar los resultados en consola
+fprintf('\n--- RESULTADOS DE LA CINEMATICA INVERSA ---\n');
+fprintf('Configuracion: %s\n', configuracion);
+fprintf('Distancia al punto final: %.2f\n', r);
+fprintf('Angulo sigma: %.2f grados\n', sigma);
+fprintf('Angulo beta: %.2f grados\n', beta);
+fprintf('Angulo gamma: %.2f grados\n', gamma);
+fprintf('Theta1: %.2f grados\n', theta1);
+fprintf('Theta2: %.2f grados\n', theta2);
+
+% Crear la figura con fondo gris claro
+figure('Color', [0.88 0.88 0.88], ...
+    'Name', 'Cinematica inversa del robot');
+
+% Crear los ejes
+ax = axes;
+
+% Configurar el fondo del area de graficacion
+set(ax, 'Color', [0.96 0.96 0.96]);
+
+hold(ax, 'on');
+
+% Dibujar el primer eslabon en azul
+plot(ax, [0 x1], [0 y1], 'o-', ...
+    'Color', [0.00 0.30 0.65], ...
+    'LineWidth', 3, ...
+    'MarkerSize', 9, ...
+    'MarkerFaceColor', [0.00 0.30 0.65]);
+
+% Dibujar el segundo eslabon en morado
+plot(ax, [x1 XF], [y1 YF], 'o-', ...
+    'Color', [0.50 0.20 0.65], ...
+    'LineWidth', 3, ...
+    'MarkerSize', 9, ...
+    'MarkerFaceColor', [0.50 0.20 0.65]);
+
+% Marcar el origen
+plot(ax, 0, 0, 's', ...
+    'MarkerSize', 10, ...
+    'MarkerFaceColor', [0.25 0.25 0.25], ...
+    'MarkerEdgeColor', [0.25 0.25 0.25]);
+
+% Marcar el codo
+plot(ax, x1, y1, 'o', ...
+    'MarkerSize', 10, ...
+    'MarkerFaceColor', [0.95 0.55 0.10], ...
+    'MarkerEdgeColor', [0.70 0.35 0.00]);
+
+% Marcar el extremo final
+plot(ax, XF, YF, 'o', ...
+    'MarkerSize', 10, ...
+    'MarkerFaceColor', [0.10 0.60 0.30], ...
+    'MarkerEdgeColor', [0.00 0.35 0.15]);
+
+% Etiquetas de los puntos en color negro
+text(ax, 0, 0, '  Origen', ...
+    'Color', 'k', 'FontSize', 11, 'FontWeight', 'bold');
+
+text(ax, x1, y1, '  Codo', ...
+    'Color', 'k', 'FontSize', 11, 'FontWeight', 'bold');
+
+text(ax, XF, YF, '  Extremo final', ...
+    'Color', 'k', 'FontSize', 11, 'FontWeight', 'bold');
+
+% Configurar el titulo y los nombres de los ejes
+title(ax, 'Cinematica inversa de un robot planar', ...
+    'Color', 'k', 'FontSize', 13);
+
+xlabel(ax, 'Posicion X', 'Color', 'k', 'FontSize', 11);
+ylabel(ax, 'Posicion Y', 'Color', 'k', 'FontSize', 11);
+
+% Configurar los ejes en color gris
+set(ax, 'XColor', [0.40 0.40 0.40], ...
+        'YColor', [0.40 0.40 0.40], ...
+        'LineWidth', 1.2, ...
+        'FontSize', 10);
+
+% Activar y personalizar la cuadrícula
+grid(ax, 'on');
+ax.GridColor = [0.65 0.65 0.65];
+ax.GridAlpha = 0.8;
+ax.MinorGridColor = [0.80 0.80 0.80];
+ax.MinorGridAlpha = 0.5;
+
+% Mantener la misma escala en ambos ejes
+axis(ax, 'equal');
+
+% Ajustar los limites de la grafica
+limite = l1 + l2;
+xlim(ax, [-limite limite]);
+ylim(ax, [-limite limite]);
+
+% Mostrar la leyenda con texto negro
+lgd = legend(ax, 'Eslabon 1', 'Eslabon 2', ...
+    'Origen', 'Codo', 'Extremo final', ...
+    'Location', 'best');
+
+set(lgd, 'TextColor', 'k', ...
+    'Color', [0.96 0.96 0.96], ...
+    'EdgeColor', [0.60 0.60 0.60]);
+
+% Mantener el fondo y finalizar la grafica
+box(ax, 'on');
+hold(ax, 'off');
